@@ -1,4 +1,6 @@
+# maze_draw.py
 import curses
+from typing import Any, List, Optional, Tuple
 
 # ---------- Characters ----------
 WALL_CHAR = '█'
@@ -11,21 +13,62 @@ SOLUTION_CHAR = '☀'
 HEADER_TEXT = "★ THE AMAZING MAZE ENGINE ★"
 
 # ---------- Color Themes ----------
+# ---------- Color Themes ----------
 # Format: (walls, entry, exit, solution, highlight)
-COLOR_THEMES = [
-    (curses.COLOR_WHITE, curses.COLOR_GREEN, curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA),
-    (curses.COLOR_GREEN, curses.COLOR_GREEN, curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA),
-    (curses.COLOR_YELLOW, curses.COLOR_GREEN, curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA),
-    (curses.COLOR_RED, curses.COLOR_GREEN, curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA),
-    (curses.COLOR_CYAN, curses.COLOR_GREEN, curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA),
+COLOR_THEMES: List[Tuple[int, int, int, int, int]] = [
+    (
+        curses.COLOR_WHITE,
+        curses.COLOR_GREEN,
+        curses.COLOR_RED,
+        curses.COLOR_CYAN,
+        curses.COLOR_MAGENTA,
+    ),
+    (
+        curses.COLOR_GREEN,
+        curses.COLOR_GREEN,
+        curses.COLOR_RED,
+        curses.COLOR_CYAN,
+        curses.COLOR_MAGENTA,
+    ),
+    (
+        curses.COLOR_YELLOW,
+        curses.COLOR_GREEN,
+        curses.COLOR_RED,
+        curses.COLOR_CYAN,
+        curses.COLOR_MAGENTA,
+    ),
+    (
+        curses.COLOR_RED,
+        curses.COLOR_GREEN,
+        curses.COLOR_RED,
+        curses.COLOR_CYAN,
+        curses.COLOR_MAGENTA,
+    ),
+    (
+        curses.COLOR_CYAN,
+        curses.COLOR_GREEN,
+        curses.COLOR_RED,
+        curses.COLOR_CYAN,
+        curses.COLOR_MAGENTA,
+    ),
 ]
 
-current_theme = 0  # Keep track of current theme
-
+current_theme: int = 0  # Keep track of current theme
 
 # ---------- Safe Draw Helper ----------
-def safe_addstr(stdscr, y, x, text, attr=0):
-    """Draw text safely inside terminal bounds to avoid crashes."""
+
+
+def safe_addstr(stdscr: Any, y: int, x: int, text: str, attr: int = 0) -> None:
+    """
+    Draw text safely inside terminal bounds to avoid curses errors.
+
+    Args:
+        stdscr: curses window object
+        y: row position
+        x: column position
+        text: string to display
+        attr: curses attributes (color, bold, etc.)
+    """
     term_h, term_w = stdscr.getmaxyx()
     if 0 <= y < term_h and 0 <= x < term_w:
         try:
@@ -33,11 +76,14 @@ def safe_addstr(stdscr, y, x, text, attr=0):
         except curses.error:
             pass
 
-
 # ---------- Theme Functions ----------
-def apply_theme():
-    """Initialize curses color pairs based on the current theme.
-    Pair numbers:
+
+
+def apply_theme() -> None:
+    """
+    Initialize curses color pairs based on the current theme.
+
+    Color pair numbers:
         1 → Wall
         2 → Entry
         3 → Exit
@@ -52,7 +98,7 @@ def apply_theme():
     curses.init_pair(5, highlight, -1)
 
 
-def rotate_theme():
+def rotate_theme() -> None:
     """Rotate to the next theme and apply it."""
     global current_theme
     current_theme = (current_theme + 1) % len(COLOR_THEMES)
@@ -60,8 +106,16 @@ def rotate_theme():
 
 
 # ---------- Maze Drawing ----------
-def draw_cell(stdscr, maze, y, x):
-    """Draw a single cell and its walls."""
+def draw_cell(stdscr: Any, maze: List[List[int]], y: int, x: int) -> None:
+    """
+    Draw a single maze cell and carve open walls.
+
+    Args:
+        stdscr: curses window object
+        maze: 2D list of maze cells
+        y: row index in maze
+        x: column index in maze
+    """
     cell = maze[y][x]
     screen_y = 2 * y + 1
     screen_x = 2 * x + 1
@@ -86,9 +140,27 @@ def draw_cell(stdscr, maze, y, x):
         safe_addstr(stdscr, screen_y, screen_x - 1, PATH_CHAR)
 
 
-def draw_maze(stdscr, maze, entry_pos, exit_pos,
-              solution=None, animate_solution=False, animate_maze=False):
-    """Draw full maze with optional animation and solution."""
+def draw_maze(
+    stdscr: Any,
+    maze: List[List[int]],
+    entry_pos: Tuple[int, int],
+    exit_pos: Tuple[int, int],
+    solution: Optional[List[Tuple[int, int]]] = None,
+    animate_solution: bool = False,
+    animate_maze: bool = False,
+) -> None:
+    """
+    Draw the full maze, entry/exit, header, and optionally the solution.
+
+    Args:
+        stdscr: curses window object
+        maze: 2D maze grid
+        entry_pos: (x, y) entry coordinates
+        exit_pos: (x, y) exit coordinates
+        solution: list of (x, y) coordinates for solution path
+        animate_solution: whether to animate solution drawing
+        animate_maze: whether to animate maze build
+    """
     stdscr.clear()
     height = len(maze)
     width = len(maze[0])
@@ -103,7 +175,7 @@ def draw_maze(stdscr, maze, entry_pos, exit_pos,
             stdscr.refresh()
             curses.napms(40)
 
-    # Draw cells
+    # Draw all cells
     for y in range(height):
         for x in range(width):
             draw_cell(stdscr, maze, y, x)
@@ -114,20 +186,23 @@ def draw_maze(stdscr, maze, entry_pos, exit_pos,
     # Draw entry/exit
     entry_y, entry_x = 2 * entry_pos[1] + 1, 2 * entry_pos[0] + 1
     exit_y, exit_x = 2 * exit_pos[1] + 1, 2 * exit_pos[0] + 1
-
-    safe_addstr(stdscr, entry_y, entry_x, ENTRY_CHAR, curses.color_pair(2) | curses.A_BOLD)
-    safe_addstr(stdscr, exit_y, exit_x, EXIT_CHAR, curses.color_pair(3) | curses.A_BOLD)
+    safe_addstr(stdscr, entry_y, entry_x, ENTRY_CHAR,
+                curses.color_pair(2) | curses.A_BOLD)
+    safe_addstr(stdscr, exit_y, exit_x, EXIT_CHAR,
+                curses.color_pair(3) | curses.A_BOLD)
 
     # Draw header
     header_y = canvas_height + 1
     header_x = max(0, (canvas_width - len(HEADER_TEXT)) // 2)
-    safe_addstr(stdscr, header_y, header_x, HEADER_TEXT, curses.color_pair(1) | curses.A_BOLD)
+    safe_addstr(stdscr, header_y, header_x, HEADER_TEXT,
+                curses.color_pair(1) | curses.A_BOLD)
 
-    # Draw solution
+    # Draw solution path
     if solution:
         for x, y in solution:
             sol_y, sol_x = 2 * y + 1, 2 * x + 1
-            safe_addstr(stdscr, sol_y, sol_x, SOLUTION_CHAR, curses.color_pair(4) | curses.A_BOLD)
+            safe_addstr(stdscr, sol_y, sol_x, SOLUTION_CHAR,
+                        curses.color_pair(4) | curses.A_BOLD)
             if animate_solution:
                 stdscr.refresh()
                 curses.napms(50)
@@ -144,8 +219,14 @@ MENU_ITEMS = [
 ]
 
 
-def draw_menu(stdscr, maze_height):
-    """Draw menu below the maze."""
+def draw_menu(stdscr: Any, maze_height: int) -> None:
+    """
+    Draw the menu under the maze.
+
+    Args:
+        stdscr: curses window object
+        maze_height: number of rows in the maze
+    """
     canvas_height = 2 * maze_height + 1
     start_y = canvas_height + 3
     start_x = 2
@@ -153,5 +234,6 @@ def draw_menu(stdscr, maze_height):
     for i, item in enumerate(MENU_ITEMS):
         safe_addstr(stdscr, start_y + i, start_x, item)
 
-    safe_addstr(stdscr, start_y + len(MENU_ITEMS) + 1, start_x, "Choice (1-4): ")
+    safe_addstr(stdscr, start_y + len(MENU_ITEMS) + 1,
+                start_x, "Choice (1-4): ")
     stdscr.refresh()

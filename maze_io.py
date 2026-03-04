@@ -1,7 +1,10 @@
 # maze_io.py
 from typing import List, Tuple
 
-def read_maze_file(filename: str) -> Tuple[List[List[int]], Tuple[int, int], Tuple[int, int]]:
+
+def read_maze_file(
+    filename: str,
+) -> Tuple[List[List[int]], Tuple[int, int], Tuple[int, int]]:
     """
     Read a maze file and return the maze grid, entry, and exit positions.
 
@@ -20,8 +23,9 @@ def read_maze_file(filename: str) -> Tuple[List[List[int]], Tuple[int, int], Tup
     entry_pos: Tuple[int, int] = (0, 0)
     exit_pos: Tuple[int, int] = (0, 0)
 
+    # Read all lines and strip whitespace
     with open(filename, 'r', encoding='utf-8') as f:
-        lines = [line.strip() for line in f.readlines()]
+        lines = [line.strip() for line in f]
 
     # Separate grid and metadata
     grid_lines = []
@@ -41,6 +45,11 @@ def read_maze_file(filename: str) -> Tuple[List[List[int]], Tuple[int, int], Tup
     for line in grid_lines:
         row = [int(c, 16) for c in line]
         maze.append(row)
+
+    # --- Sanity check: all rows same length ---
+    row_lengths = [len(row) for row in maze]
+    if min(row_lengths) != max(row_lengths):
+        return None, None, None
 
     # Parse entry / exit from metadata
     if len(metadata_lines) >= 2:
