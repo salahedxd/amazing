@@ -1,44 +1,53 @@
+# maze_solver.py
 from collections import deque
+from typing import List, Tuple
 
-def solve_maze(maze, entry, exit):
+def solve_maze(maze: List[List[int]], entry_pos: Tuple[int, int], exit_pos: Tuple[int, int]) -> List[Tuple[int, int]]:
+    """
+    Solve the maze using BFS and return the path from entry to exit.
+
+    Maze cells use bitmask:
+      1 → North wall
+      2 → East wall
+      4 → South wall
+      8 → West wall
+
+    Returns:
+      List of (x, y) tuples representing the path (excluding entry and exit for animation)
+    """
     height = len(maze)
     width = len(maze[0])
 
-    queue = deque([entry])
-    visited = {entry: None}
+    queue = deque([entry_pos])
+    visited = {entry_pos: None}
 
     while queue:
         x, y = queue.popleft()
 
-        if (x, y) == exit:
+        if (x, y) == exit_pos:
             break
 
         cell = maze[y][x]
 
         directions = [
-            (0, -1, 1),  # North (bit 0)
-            (1, 0, 2),   # East  (bit 1)
-            (0, 1, 4),   # South (bit 2)
-            (-1, 0, 8),  # West  (bit 3)
+            (0, -1, 1),  # North
+            (1, 0, 2),   # East
+            (0, 1, 4),   # South
+            (-1, 0, 8),  # West
         ]
 
         for dx, dy, wall_bit in directions:
-            # if wall is OPEN (bit not set)
-            if not (cell & wall_bit):
-                nx = x + dx
-                ny = y + dy
+            if not (cell & wall_bit):  # Open wall
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < width and 0 <= ny < height and (nx, ny) not in visited:
+                    visited[(nx, ny)] = (x, y)
+                    queue.append((nx, ny))
 
-                if 0 <= nx < width and 0 <= ny < height:
-                    if (nx, ny) not in visited:
-                        visited[(nx, ny)] = (x, y)
-                        queue.append((nx, ny))
-
-    # reconstruct path
+    # Reconstruct path
     path = []
-    node = exit
-
+    node = exit_pos
     if node not in visited:
-        return []  # no path
+        return []  # No path found
 
     while node:
         path.append(node)
@@ -46,10 +55,10 @@ def solve_maze(maze, entry, exit):
 
     path.reverse()
 
-    # remove entry and exit from animation path
-    if path and path[0] == entry:
+    # Remove entry and exit for animation
+    if path and path[0] == entry_pos:
         path = path[1:]
-    if path and path[-1] == exit:
+    if path and path[-1] == exit_pos:
         path = path[:-1]
 
     return path

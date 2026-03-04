@@ -1,53 +1,50 @@
-# # maze_io.py
-# def read_maze_file(filename):
-#     maze = []
-#     entry = (0, 0)
-#     exit = (0, 0)
-#     with open(filename, 'r', encoding='utf-8') as f:
-#         lines = [line.strip() for line in f if line.strip()]
+# maze_io.py
+from typing import List, Tuple
 
-#     # Maze grid lines (only 0 and F)
-#     grid_lines = [line for line in lines if all(c in '0F' for c in line.upper())]
-#     for line in grid_lines:
-#         maze.append([1 if c.upper() == 'F' else 0 for c in line])
+def read_maze_file(filename: str) -> Tuple[List[List[int]], Tuple[int, int], Tuple[int, int]]:
+    """
+    Read a maze file and return the maze grid, entry, and exit positions.
 
-#     # Entry/Exit coordinates
-#     coords = [line for line in lines if ',' in line]
-#     if len(coords) >= 2:
-#         entry = tuple(map(int, coords[0].split(',')))
-#         exit = tuple(map(int, coords[1].split(',')))
-#     return maze, entry, exit
+    Maze file format:
+      - Grid of hex characters (0-F) representing wall bits
+      - Empty line
+      - Entry coordinates: x,y
+      - Exit coordinates: x,y
 
-def read_maze_file(filename):
-    maze = []
-    entry = (0, 0)
-    exit = (0, 0)
+    Returns:
+      maze: 2D list of integers
+      entry_pos: (x, y)
+      exit_pos: (x, y)
+    """
+    maze: List[List[int]] = []
+    entry_pos: Tuple[int, int] = (0, 0)
+    exit_pos: Tuple[int, int] = (0, 0)
 
     with open(filename, 'r', encoding='utf-8') as f:
-        raw_lines = [line.strip() for line in f.readlines()]
+        lines = [line.strip() for line in f.readlines()]
 
-    # Separate grid from metadata
+    # Separate grid and metadata
     grid_lines = []
-    metadata = []
+    metadata_lines = []
     empty_line_found = False
 
-    for line in raw_lines:
-        if line == "":
+    for line in lines:
+        if not line:
             empty_line_found = True
             continue
         if not empty_line_found:
             grid_lines.append(line)
         else:
-            metadata.append(line)
+            metadata_lines.append(line)
 
-    # Parse hex grid
+    # Parse grid lines as hex numbers
     for line in grid_lines:
         row = [int(c, 16) for c in line]
         maze.append(row)
 
-    # Parse entry / exit
-    if len(metadata) >= 2:
-        entry = tuple(map(int, metadata[0].split(',')))
-        exit = tuple(map(int, metadata[1].split(',')))
+    # Parse entry / exit from metadata
+    if len(metadata_lines) >= 2:
+        entry_pos = tuple(map(int, metadata_lines[0].split(',')))
+        exit_pos = tuple(map(int, metadata_lines[1].split(',')))
 
-    return maze, entry, exit
+    return maze, entry_pos, exit_pos
